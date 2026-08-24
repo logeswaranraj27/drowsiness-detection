@@ -23,4 +23,4 @@ EXPOSE 5000
 ENV PORT=5000
 
 # Run app.py when the container launches
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "backend.app:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "-w", "1", "backend.app:app"]
