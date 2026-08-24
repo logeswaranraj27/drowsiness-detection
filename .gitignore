@@ -1,0 +1,26 @@
+# Virtual environments
+drowsiness_env/
+venv/
+env/
+__pycache__/
+*/__pycache__/
+*.pyc
+
+# Database & SQLite files
+*.db
+*.sqlite3
+database/*.db
+
+# Logs & temp
+event_log.json
+others/reports/event_log.json
+.system_generated/
+
+# Dataset images (optional, to keep GitHub repo size small)
+Drowsy_datset/
+others/Drowsy_datset/
+
+# Firebase private credentials
+serviceAccountKey.json
+*firebase*.json
+database/serviceAccountKey.json

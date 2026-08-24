@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DrowsyGuard — Sign In</title>
+  <meta name="description" content="AI-powered driver drowsiness detection. Sign in or create an account." />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+<div class="auth-page">
+
+  <!-- ── Left Hero ───────────────────────────────── -->
+  <div class="auth-hero">
+    <svg class="hero-rings" viewBox="0 0 160 160">
+      <circle cx="80" cy="80" r="70" />
+      <circle cx="80" cy="80" r="50" />
+      <circle cx="80" cy="80" r="30" />
+    </svg>
+    <div class="hero-logo">🛡️ DrowsyGuard</div>
+    <p class="hero-tagline">
+      Real-time AI drowsiness detection that keeps you and everyone on the road safe.
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="val">82%</div>
+        <div class="lbl">Model Accuracy</div>
+      </div>
+      <div class="hero-stat">
+        <div class="val">&lt;50ms</div>
+        <div class="lbl">Detection Latency</div>
+      </div>
+      <div class="hero-stat">
+        <div class="val">EAR+CNN</div>
+        <div class="lbl">Dual Detection</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Right Panel ─────────────────────────────── -->
+  <div class="auth-panel">
+
+    <!-- Language selector -->
+    <div class="lang-bar">
+      <span style="font-size:0.8rem;color:var(--text-muted)">🌐</span>
+      <select id="lang-select" onchange="applyLang(this.value)">
+        <option value="en">English</option>
+        <option value="ta">தமிழ் (Tamil)</option>
+        <option value="hi">हिन्दी (Hindi)</option>
+        <option value="ml">മലയാളം (Malayalam)</option>
+        <option value="te">తెలుగు (Telugu)</option>
+        <option value="kn">ಕನ್ನಡ (Kannada)</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+        <option value="es">Español</option>
+      </select>
+    </div>
+
+    <div class="auth-box">
+      <div class="auth-title" id="auth-title">Welcome back</div>
+      <div class="auth-sub"  id="auth-sub">Sign in to your account to continue</div>
+
+      <!-- Tab switcher -->
+      <div class="tab-switch">
+        <button class="tab-btn active" id="tab-login"  onclick="switchTab('login')"  data-i18n="login">Sign In</button>
+        <button class="tab-btn"        id="tab-signup" onclick="switchTab('signup')" data-i18n="signup">Create Account</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label" data-i18n="email">Email</label>
+          <input id="login-email"    type="email"    class="form-input" placeholder="you@example.com" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="password">Password</label>
+          <input id="login-password" type="password" class="form-input" placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn-primary" id="login-btn" data-i18n="sign_in">Sign In</button>
+        <div class="error-msg" id="login-error"></div>
+      </form>
+
+      <!-- Signup Form -->
+      <form id="signup-form" style="display:none" onsubmit="handleSignup(event)">
+        <div class="form-group">
+          <label class="form-label" data-i18n="full_name">Full Name</label>
+          <input id="signup-name"     type="text"     class="form-input" placeholder="Your full name" required autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="email">Email</label>
+          <input id="signup-email"    type="email"    class="form-input" placeholder="you@example.com" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="password">Password</label>
+          <input id="signup-password" type="password" class="form-input" placeholder="Min. 6 characters" required autocomplete="new-password" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="confirm_password">Confirm Password</label>
+          <input id="signup-confirm"  type="password" class="form-input" placeholder="Re-enter password" required autocomplete="new-password" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="language">Preferred Language</label>
+          <select id="signup-lang" class="form-select">
+            <option value="en">English</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="hi">हिन्दी (Hindi)</option>
+            <option value="ml">മലയാളം (Malayalam)</option>
+            <option value="te">తెలుగు (Telugu)</option>
+            <option value="kn">ಕನ್ನಡ (Kannada)</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="es">Español</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-primary" id="signup-btn" data-i18n="create_account">Create Account</button>
+        <div class="error-msg" id="signup-error"></div>
+      </form>
+
+    </div><!-- /auth-box -->
+  </div><!-- /auth-panel -->
+
+</div><!-- /auth-page -->
+
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+</body>
+</html>

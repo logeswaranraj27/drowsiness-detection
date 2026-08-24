@@ -1,0 +1,15 @@
+# AI-Based Driver Drowsiness Detection System
+# Web App + CNN + OpenCV approach (no dlib required)
+
+opencv-python-headless>=4.8.0.76
+numpy==1.24.3
+tensorflow==2.13.0
+scikit-learn==1.3.1
+matplotlib==3.7.2
+Pillow==10.0.0
+mediapipe==0.10.9
+protobuf<4.0.0,>=3.20.3
+flask==3.0.3
+werkzeug==3.0.3
+firebase-admin>=6.0.0
+gunicorn>=21.2.0

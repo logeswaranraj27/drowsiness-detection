@@ -1,0 +1,13 @@
+              precision    recall  f1-score   support
+
+      DROWSY       0.80      0.83      0.82       561
+     NATURAL       0.84      0.80      0.82       610
+
+    accuracy                           0.82      1171
+   macro avg       0.82      0.82      0.82      1171
+weighted avg       0.82      0.82      0.82      1171
+
+
+Confusion Matrix:
+[[468  93]
+ [119 491]]

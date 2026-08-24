@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DrowsyGuard — Dashboard</title>
+  <meta name="description" content="AI-powered real-time driver drowsiness detection dashboard." />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- ══════════════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">🛡️ DrowsyGuard</div>
+      <div class="logo-sub">AI Drowsiness Detection</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label" data-i18n="nav_main">Main</div>
+      <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')" role="button" tabindex="0">
+        <span class="nav-icon">🏠</span>
+        <span data-i18n="nav_dashboard">Dashboard</span>
+      </div>
+      <div class="nav-item" id="nav-detection" onclick="showPage('detection')" role="button" tabindex="0">
+        <span class="nav-icon">🎥</span>
+        <span data-i18n="nav_live">Live Detection</span>
+      </div>
+      <div class="nav-item" id="nav-history" onclick="showPage('history')" role="button" tabindex="0">
+        <span class="nav-icon">📊</span>
+        <span data-i18n="nav_history">Session History</span>
+      </div>
+
+      <div class="nav-section-label" data-i18n="nav_account">Account</div>
+      <div class="nav-item" id="nav-profile" onclick="showPage('profile')" role="button" tabindex="0">
+        <span class="nav-icon">👤</span>
+        <span data-i18n="nav_profile">Profile</span>
+      </div>
+    </nav>
+
+    <div class="sidebar-user">
+      <div class="user-card">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div class="user-info">
+          <div class="uname"  id="sidebar-name">Loading…</div>
+          <div class="uemail" id="sidebar-email"></div>
+        </div>
+        <button class="logout-btn" onclick="handleLogout()" title="Logout">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════════════════════════
+       MAIN CONTENT
+  ══════════════════════════════════════════ -->
+  <main class="main-content">
+
+    <!-- ── TOAST CONTAINER ── -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+         PAGE: DASHBOARD (Overview)
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <div class="tab-page active" id="page-dashboard">
+      <div class="page-header">
+        <h1 class="page-title" data-i18n="dashboard_title">Overview</h1>
+        <p class="page-sub"  data-i18n="dashboard_sub">Your drowsiness detection activity at a glance</p>
+      </div>
+
+      <div class="stats-grid" id="stats-grid">
+        <div class="card">
+          <div class="card-title" data-i18n="stat_sessions">Total Sessions</div>
+          <div class="card-value" id="stat-sessions">—</div>
+          <div class="card-sub"  data-i18n="stat_sessions_sub">Rides monitored</div>
+        </div>
+        <div class="card">
+          <div class="card-title" data-i18n="stat_safe">Safe Score</div>
+          <div class="card-value" id="stat-safe">—%</div>
+          <div class="card-sub"  data-i18n="stat_safe_sub">Higher is better</div>
+        </div>
+        <div class="card">
+          <div class="card-title" data-i18n="stat_drowsy">Drowsy Events</div>
+          <div class="card-value" id="stat-drowsy" style="color:var(--danger);-webkit-text-fill-color:var(--danger)">—</div>
+          <div class="card-sub"  data-i18n="stat_drowsy_sub">Total frames flagged</div>
+        </div>
+        <div class="card">
+          <div class="card-title" data-i18n="stat_total_frames">Total Frames</div>
+          <div class="card-value" id="stat-frames">—</div>
+          <div class="card-sub"  data-i18n="stat_frames_sub">Frames analyzed</div>
+        </div>
+      </div>
+
+      <!-- Recent sessions mini table -->
+      <div class="card" style="margin-top:8px;">
+        <div class="section-title" data-i18n="recent_sessions">Recent Sessions</div>
+        <div class="table-wrap">
+          <table id="recent-table">
+            <thead>
+              <tr>
+                <th data-i18n="th_date">Date</th>
+                <th data-i18n="th_vehicle">Vehicle</th>
+                <th data-i18n="th_frames">Frames</th>
+                <th data-i18n="th_drowsy">Drowsy</th>
+                <th data-i18n="th_score">Score</th>
+              </tr>
+            </thead>
+            <tbody id="recent-tbody">
+              <tr><td colspan="5" class="text-center text-muted" style="padding:24px">No sessions yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+         PAGE: LIVE DETECTION
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <div class="tab-page" id="page-detection">
+      <div class="page-header">
+        <h1 class="page-title" data-i18n="detection_title">Live Detection</h1>
+        <p class="page-sub"  data-i18n="detection_sub">Start a ride to begin real-time drowsiness monitoring</p>
+      </div>
+
+      <div class="detection-layout">
+
+        <!-- Video area -->
+        <div>
+          <div class="video-card" id="video-card">
+            <video id="video-feed" autoplay playsinline muted></video>
+            <canvas id="capture-canvas" style="display:none"></canvas>
+
+            <!-- Placeholder shown before camera starts -->
+            <div class="video-placeholder" id="video-placeholder">
+              <div class="cam-icon">📷</div>
+              <p data-i18n="cam_placeholder">Select a vehicle and click <strong>Start Detection</strong></p>
+            </div>
+
+            <!-- Overlay (shown during active session) -->
+            <div class="video-overlay" id="video-overlay">
+              <div class="state-badge ALERT" id="state-badge">ALERT</div>
+              <div class="wake-banner"       id="wake-banner">⚠️ WAKE UP — DON'T SLEEP! ⚠️</div>
+            </div>
+          </div>
+
+          <div class="detection-controls">
+            <button class="btn-detect btn-start" id="btn-start" onclick="startDetection()" data-i18n="btn_start">
+              🎥 Start Detection
+            </button>
+            <button class="btn-detect btn-end" id="btn-end" onclick="endDetection()" disabled data-i18n="btn_end">
+              🛑 End Ride
+            </button>
+          </div>
+        </div>
+
+        <!-- Side panel metrics -->
+        <div class="detection-panel">
+
+          <!-- Vehicle selector -->
+          <div class="card">
+            <div class="card-title" data-i18n="vehicle_select">Select Vehicle</div>
+            <div class="vehicle-select-row" style="margin-top:8px">
+              <select id="det-vehicle-select" class="form-select">
+                <option value="">— No vehicle —</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Real-time metrics -->
+          <div class="card" id="metrics-card">
+            <div class="card-title" data-i18n="metrics_title">Real-time Metrics</div>
+            <div class="metric-row">
+              <span class="metric-label" data-i18n="m_state">State</span>
+              <span class="metric-val"   id="m-state">—</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">EAR</span>
+              <span class="metric-val"   id="m-ear">—</span>
+            </div>
+            <div style="padding:0 0 10px">
+              <div class="progress-bar"><div class="progress-fill" id="ear-bar" style="width:60%"></div></div>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">MAR</span>
+              <span class="metric-val"   id="m-mar">—</span>
+            </div>
+            <div style="padding:0 0 10px">
+              <div class="progress-bar"><div class="progress-fill danger" id="mar-bar" style="width:0%"></div></div>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label" data-i18n="m_cnn">CNN Confidence</span>
+              <span class="metric-val"   id="m-cnn">—</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">FPS</span>
+              <span class="metric-val"   id="m-fps">—</span>
+            </div>
+          </div>
+
+          <!-- Session stats (live) -->
+          <div class="card">
+            <div class="card-title" data-i18n="session_stats">Session Stats</div>
+            <div class="metric-row">
+              <span class="metric-label" data-i18n="ss_frames">Frames sent</span>
+              <span class="metric-val"   id="ss-frames">0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label" data-i18n="ss_drowsy">Drowsy frames</span>
+              <span class="metric-val"   id="ss-drowsy" style="color:var(--danger)">0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label" data-i18n="ss_duration">Duration</span>
+              <span class="metric-val"   id="ss-duration">00:00</span>
+            </div>
+          </div>
+
+        </div><!-- /detection-panel -->
+      </div><!-- /detection-layout -->
+    </div><!-- /page-detection -->
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+         PAGE: SESSION HISTORY
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <div class="tab-page" id="page-history">
+      <div class="page-header">
+        <h1 class="page-title" data-i18n="history_title">Session History</h1>
+        <p class="page-sub"  data-i18n="history_sub">All your recorded rides and drowsiness data</p>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table id="history-table">
+            <thead>
+              <tr>
+                <th data-i18n="th_date">Date &amp; Time</th>
+                <th data-i18n="th_vehicle">Vehicle</th>
+                <th data-i18n="th_duration">Duration</th>
+                <th data-i18n="th_frames">Frames</th>
+                <th data-i18n="th_drowsy">Drowsy</th>
+                <th data-i18n="th_score">Safe Score</th>
+                <th data-i18n="th_avg_conf">Avg Confidence</th>
+              </tr>
+            </thead>
+            <tbody id="history-tbody">
+              <tr><td colspan="7" class="text-center text-muted" style="padding:32px">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+         PAGE: PROFILE / ACCOUNT
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <div class="tab-page" id="page-profile">
+      <div class="page-header">
+        <h1 class="page-title" data-i18n="profile_title">Account &amp; Profile</h1>
+        <p class="page-sub"  data-i18n="profile_sub">Manage your personal info and registered vehicles</p>
+      </div>
+
+      <div class="profile-grid">
+
+        <!-- Personal Info -->
+        <div class="card">
+          <div class="section-title" data-i18n="personal_info">Personal Info</div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="full_name">Full Name</label>
+            <input id="p-name"  type="text"  class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="email">Email</label>
+            <input id="p-email" type="email" class="form-input" disabled style="opacity:0.5;cursor:not-allowed" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="language">Preferred Language</label>
+            <select id="p-lang" class="form-select">
+              <option value="en">English</option>
+              <option value="ta">தமிழ் (Tamil)</option>
+              <option value="hi">हिन्दी (Hindi)</option>
+              <option value="ml">മലയാളം (Malayalam)</option>
+              <option value="te">తెలుగు (Telugu)</option>
+              <option value="kn">ಕನ್ನಡ (Kannada)</option>
+              <option value="fr">Français</option>
+              <option value="de">Deutsch</option>
+              <option value="es">Español</option>
+            </select>
+          </div>
+          <div class="save-row">
+            <button class="btn-outline" onclick="saveProfile()" data-i18n="save_changes">Save Changes</button>
+          </div>
+        </div>
+
+        <!-- Vehicles -->
+        <div class="card">
+          <div class="section-title" data-i18n="my_vehicles">My Vehicles</div>
+          <div class="vehicle-list" id="vehicle-list">
+            <div class="text-muted text-center" style="padding:12px" data-i18n="no_vehicles">No vehicles added yet</div>
+          </div>
+
+          <!-- Add Vehicle -->
+          <div style="margin-top:20px">
+            <div class="section-title" data-i18n="add_vehicle">Add Vehicle</div>
+            <div class="add-vehicle-form">
+              <div class="form-group" style="margin:0">
+                <label class="form-label" data-i18n="v_name">Name</label>
+                <input id="v-name"  type="text" class="form-input" placeholder="e.g. My Car" />
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label" data-i18n="v_type">Type</label>
+                <select id="v-type" class="form-select">
+                  <option>Car</option>
+                  <option>Truck</option>
+                  <option>Bike</option>
+                  <option>Bus</option>
+                  <option>Van</option>
+                  <option>Auto</option>
+                </select>
+              </div>
+              <div class="form-group" style="grid-column:1/-1;margin:0">
+                <label class="form-label" data-i18n="v_plate">License Plate</label>
+                <input id="v-plate" type="text" class="form-input" placeholder="e.g. TN 01 AB 1234" />
+              </div>
+              <button class="btn-primary" onclick="addVehicle()" data-i18n="add_vehicle_btn">+ Add Vehicle</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /profile-grid -->
+    </div><!-- /page-profile -->
+
+  </main>
+</div><!-- /app-layout -->
+
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
