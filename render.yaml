@@ -1,0 +1,10 @@
+# render.yaml – Render deployment configuration
+# This file tells Render to build the Docker image using the Dockerfile in the repo root
+
+[build]
+  dockerfile = "Dockerfile"
+
+[deploy]
+  # Render will run the CMD defined in the Dockerfile (gunicorn ...)
+  # No extra start command needed because the Dockerfile already sets CMD
+  port = 5000

@@ -1,0 +1,26 @@
+# Ignore unnecessary files for Docker build
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env/
+.drowsiness_env/
+
+# Git metadata
+.git
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Large datasets (keep out of image)
+Drowsy_datset/
+others/Drowsy_datset/
+
+# Secrets
+serviceAccountKey.json
+*.json
