@@ -1,0 +1,12 @@
+# railway.toml
+# Railway deployment configuration
+# This file tells Railway to build the Docker image using the Dockerfile in the repo root.
+
+[build]
+  dockerfile = "Dockerfile"
+
+[deploy]
+  # Railway will run the CMD defined in the Dockerfile (gunicorn ...)
+  # No extra start command needed.
+  # Expose port 5000 (default in Dockerfile)
+  port = 5000

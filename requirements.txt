@@ -36,7 +36,7 @@ google-resumable-media==2.5.0
 google-crc32c==1.5.0
 googleapis-common-protos==1.60.0
 google-pasta==0.2.0
-grpcio==1.48.2
+grpcio==1.49.1
 grpcio-status==1.48.2
 proto-plus==1.22.3
 cachecontrol==0.14.0
