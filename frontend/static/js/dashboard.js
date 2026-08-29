@@ -412,9 +412,16 @@ async function startDetection() {
     sessionId = res.session_id;
   } catch (e) { toast("Could not start session: " + e.message, "error"); return; }
 
-  // Get camera
+  // Get camera with optimal resolution for fast streaming
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 640 },
+        height: { ideal: 480 },
+        facingMode: "user",
+      },
+      audio: false,
+    });
   } catch (e) { toast("Camera access denied: " + e.message, "error"); return; }
 
   const vid = video();
@@ -443,20 +450,25 @@ async function startDetection() {
   toast("Detection started!", "success");
 }
 
+let isProcessingFrame = false;
+
 async function detectLoop() {
   if (!detecting) return;
 
   const vid = video();
   const cvs = canvas();
-  if (vid.readyState >= 2) {
-    cvs.width  = vid.videoWidth  || 320;
-    cvs.height = vid.videoHeight || 240;
+  if (vid.readyState >= 2 && !isProcessingFrame) {
+    isProcessingFrame = true;
+    const targetWidth = 320;
+    const targetHeight = vid.videoHeight && vid.videoWidth ? Math.round((vid.videoHeight / vid.videoWidth) * targetWidth) : 240;
+    cvs.width  = targetWidth;
+    cvs.height = targetHeight;
     const ctx = cvs.getContext("2d");
-    ctx.drawImage(vid, 0, 0);
-    const b64 = cvs.toDataURL("image/jpeg", 0.6);
+    ctx.drawImage(vid, 0, 0, targetWidth, targetHeight);
+    const b64 = cvs.toDataURL("image/jpeg", 0.45);
 
     const now = performance.now();
-    const fps = Math.round(1000 / (now - lastFrameTime));
+    const fps = Math.round(1000 / Math.max(now - lastFrameTime, 1));
     lastFrameTime = now;
 
     try {
@@ -471,7 +483,11 @@ async function detectLoop() {
       if (d.state === "DROWSY") drowsyCount++;
       document.getElementById("ss-frames").textContent = frameCount;
       document.getElementById("ss-drowsy").textContent = drowsyCount;
-    } catch {}
+    } catch (err) {
+      console.warn("Detection request error:", err);
+    } finally {
+      isProcessingFrame = false;
+    }
   }
 
   if (detecting) requestAnimationFrame(detectLoop);

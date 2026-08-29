@@ -36,10 +36,10 @@ def _mar(landmarks, idx, w, h):
 
 
 class DrowsinessDetector:
-    EAR_THRESHOLD   = 0.21
-    MAR_THRESHOLD   = 0.60
-    CONSEC_FRAMES   = 15
-    CNN_EVERY_N     = 5
+    EAR_THRESHOLD   = 0.22   # Eyes closed threshold
+    MAR_THRESHOLD   = 0.58   # Yawning threshold
+    CONSEC_FRAMES   = 3      # Ultra-fast response: 3 frames (~0.5 - 1.0 sec over network)
+    CNN_EVERY_N     = 1      # Run model inference on EVERY frame
 
     def __init__(self, model_path=None, class_names_path=None):
         backend_dir = os.path.dirname(os.path.abspath(__file__))
@@ -187,7 +187,7 @@ class DrowsinessDetector:
         self._closed_ctr = self._closed_ctr + 1 if ear < self.EAR_THRESHOLD else 0
         self._yawn_ctr   = self._yawn_ctr   + 1 if mar > self.MAR_THRESHOLD else 0
 
-        # CNN/YOLO every N frames
+        # CNN/YOLO model on every frame
         if self._model is not None and self._frame_count % self.CNN_EVERY_N == 0:
             xs = [lm.x * w for lm in landmarks]
             ys = [lm.y * h for lm in landmarks]
@@ -200,12 +200,13 @@ class DrowsinessDetector:
                 elif self._model_type == "tf":
                     self._cnn_conf = self._predict_tf(roi)
 
-        eyes_alert = self._closed_ctr >= self.CONSEC_FRAMES
-        yawn_alert = self._yawn_ctr   >= self.CONSEC_FRAMES
+        eyes_alert  = self._closed_ctr >= self.CONSEC_FRAMES
+        yawn_alert  = self._yawn_ctr   >= self.CONSEC_FRAMES
+        model_alert = self._cnn_conf   >= 0.70  # Instant trigger if model detects drowsiness
 
-        if eyes_alert or yawn_alert:
+        if eyes_alert or yawn_alert or model_alert:
             state = "DROWSY"
-        elif self._closed_ctr > 0 or self._yawn_ctr > 0:
+        elif self._closed_ctr > 0 or self._yawn_ctr > 0 or self._cnn_conf >= 0.40:
             state = "WATCHING"
         else:
             state = "ALERT"
