@@ -1,5 +1,5 @@
 """
-detector.py — wraps the TF model + MediaPipe FaceMesh as a reusable class
+detector.py — wraps the YOLO classifier + MediaPipe FaceMesh as a reusable class
 """
 
 import os
@@ -7,7 +7,7 @@ import json
 import numpy as np
 import cv2
 
-IMG_SIZE = 145
+IMG_SIZE = 224
 
 LEFT_EYE  = [362, 385, 387, 263, 373, 380]
 RIGHT_EYE = [33, 160, 158, 133, 153, 144]
@@ -45,12 +45,14 @@ class DrowsinessDetector:
         backend_dir = os.path.dirname(os.path.abspath(__file__))
         root_dir = os.path.dirname(backend_dir)
 
-        # Resolve model_path
+        # Resolve YOLO model path (.pt)
         candidates_model = [
             model_path,
+            os.path.join(backend_dir, "best.pt"),
+            os.path.join(root_dir, "best.pt"),
+            os.path.join(root_dir, "backend", "best.pt"),
+            # Fallback to old .h5 model
             os.path.join(backend_dir, "drowsiness_model.h5"),
-            os.path.join(root_dir, "drowsiness_model.h5"),
-            os.path.join(root_dir, "backend", "drowsiness_model.h5"),
         ]
         resolved_model = next((p for p in candidates_model if p and os.path.exists(p)), None)
 
@@ -73,13 +75,34 @@ class DrowsinessDetector:
             min_tracking_confidence=0.5,
         )
 
-        # CNN (optional)
-        self._model     = None
-        self._drowsy_idx = 1
-        if resolved_model and resolved_classes:
+        # Model (YOLO .pt or TensorFlow .h5)
+        self._model = None
+        self._model_type = None  # "yolo" or "tf"
+        self._drowsy_idx = 0
+
+        if resolved_model and resolved_model.endswith(".pt"):
+            try:
+                from ultralytics import YOLO
+                self._model = YOLO(resolved_model)
+                self._model_type = "yolo"
+                # Get class names from YOLO model
+                names = self._model.names  # e.g. {0: 'Drowsy', 1: 'Non Drowsy'}
+                self._drowsy_idx = next(
+                    (idx for idx, name in names.items()
+                     if any(k in name.lower() for k in ("drowsy", "closed", "sleep", "sleepy", "fatigue", "tired"))
+                     and "non" not in name.lower()),
+                    0,
+                )
+                print(f"[detector] YOLO model loaded from {resolved_model}. Drowsy index = {self._drowsy_idx}")
+                print(f"[detector] YOLO class names: {names}")
+            except Exception as e:
+                print(f"[detector] YOLO load failed: {e}")
+
+        elif resolved_model and resolved_model.endswith(".h5") and resolved_classes:
             try:
                 from tensorflow.keras.models import load_model
                 self._model = load_model(resolved_model)
+                self._model_type = "tf"
                 with open(resolved_classes) as f:
                     mapping = json.load(f)
                 kw = ("drowsy", "closed", "sleep", "sleepy", "fatigue", "tired")
@@ -88,9 +111,9 @@ class DrowsinessDetector:
                      if any(k in name.lower() for k in kw)),
                     1,
                 )
-                print(f"[detector] CNN loaded from {resolved_model}. Drowsy index = {self._drowsy_idx}")
+                print(f"[detector] TF CNN loaded from {resolved_model}. Drowsy index = {self._drowsy_idx}")
             except Exception as e:
-                print(f"[detector] CNN load failed: {e}")
+                print(f"[detector] TF CNN load failed: {e}")
 
         # rolling state
         self._closed_ctr  = 0
@@ -126,6 +149,22 @@ class DrowsinessDetector:
         jpeg_bytes = base64.b64decode(b64_str)
         return self.process_frame_bytes(jpeg_bytes)
 
+    def _predict_yolo(self, roi):
+        """Run YOLO classification on a face ROI."""
+        results = self._model.predict(roi, imgsz=IMG_SIZE, verbose=False)
+        probs = results[0].probs
+        if probs is not None:
+            drowsy_conf = float(probs.data[self._drowsy_idx])
+            return drowsy_conf
+        return 0.0
+
+    def _predict_tf(self, roi):
+        """Run TensorFlow CNN on a face ROI."""
+        inp = cv2.resize(roi, (145, 145))
+        inp = np.expand_dims(inp.astype("float32") / 255.0, 0)
+        prob = float(self._model.predict(inp, verbose=0)[0][0])
+        return prob if self._drowsy_idx == 1 else (1 - prob)
+
     def _process(self, frame) -> dict:
         self._frame_count += 1
         h, w = frame.shape[:2]
@@ -148,17 +187,18 @@ class DrowsinessDetector:
         self._closed_ctr = self._closed_ctr + 1 if ear < self.EAR_THRESHOLD else 0
         self._yawn_ctr   = self._yawn_ctr   + 1 if mar > self.MAR_THRESHOLD else 0
 
-        # CNN every N frames
+        # CNN/YOLO every N frames
         if self._model is not None and self._frame_count % self.CNN_EVERY_N == 0:
             xs = [lm.x * w for lm in landmarks]
             ys = [lm.y * h for lm in landmarks]
             x1, x2 = max(int(min(xs)), 0), min(int(max(xs)), w)
             y1, y2 = max(int(min(ys)), 0), min(int(max(ys)), h)
             if x2 > x1 and y2 > y1:
-                roi = cv2.resize(frame[y1:y2, x1:x2], (IMG_SIZE, IMG_SIZE))
-                inp = np.expand_dims(roi.astype("float32") / 255.0, 0)
-                prob = float(self._model.predict(inp, verbose=0)[0][0])
-                self._cnn_conf = prob if self._drowsy_idx == 1 else (1 - prob)
+                roi = frame[y1:y2, x1:x2]
+                if self._model_type == "yolo":
+                    self._cnn_conf = self._predict_yolo(roi)
+                elif self._model_type == "tf":
+                    self._cnn_conf = self._predict_tf(roi)
 
         eyes_alert = self._closed_ctr >= self.CONSEC_FRAMES
         yawn_alert = self._yawn_ctr   >= self.CONSEC_FRAMES

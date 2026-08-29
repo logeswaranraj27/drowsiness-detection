@@ -51,7 +51,7 @@ def _find_dataset():
             return c
     return candidates[0]
 
-DATASET_DIR = _find_dataset()
+DATASET_DIR = os.path.join(ROOT_DIR, "Driver Drowsiness Dataset (DDD)")
 IMG_SIZE = 145                   # input image size (square)
 BATCH_SIZE = 32
 EPOCHS = 20

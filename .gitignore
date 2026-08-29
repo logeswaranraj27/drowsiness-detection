@@ -19,6 +19,9 @@ others/reports/event_log.json
 # Dataset images (optional, to keep GitHub repo size small)
 Drowsy_datset/
 others/Drowsy_datset/
+DDD_YOLO/
+Driver Drowsiness Dataset (DDD)/
+*.zip
 
 # Firebase private credentials
 serviceAccountKey.json
